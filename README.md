@@ -206,6 +206,13 @@ python -m pytest
 python tools/make_sample_pdf.py      # tạo lại examples/sample-paper.pdf
 ```
 
+## 🔗 Dự án khác
+
+- **[ControlPhone](https://github.com/mahiepit/ControlPhone)**: điều khiển nhiều điện thoại Android cùng lúc, xem màn hình trực tiếp
+- **[ChuotVan](https://github.com/mahiepit/ChuotVan)**: biến văn AI, văn dịch máy thành tiếng Việt tự nhiên
+- **[DiaChiMoi](https://github.com/mahiepit/DiaChiMoi)**: chuyển địa chỉ cũ sang đơn vị hành chính mới sau sáp nhập 2025
+- **[SkillLint](https://github.com/mahiepit/SkillLint)**: kiểm tra SKILL.md có hợp lệ và chạy được trên mọi agent
+
 ## ❤️ Ủng hộ dự án
 
 PaperViet miễn phí và sẽ luôn miễn phí. Nếu nó giúp bạn tiết kiệm thời gian, một khoản ủng hộ nhỏ giúp dự án được duy trì. Cảm ơn bạn!

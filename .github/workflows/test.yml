@@ -49,3 +49,11 @@ jobs:
           python skills/paper-viet/scripts/extract_pdf.py examples/sample-paper.pdf --out /tmp/w
           code=$?
           test "$code" -eq 3
+
+  skilllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mahiepit/SkillLint@v1
+        with:
+          strict: "true"

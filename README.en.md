@@ -207,6 +207,13 @@ python -m pytest
 python tools/make_sample_pdf.py      # rebuild examples/sample-paper.pdf
 ```
 
+## 🔗 More projects
+
+- **[ControlPhone](https://github.com/mahiepit/ControlPhone)**: control many Android phones at once from your PC
+- **[ChuotVan](https://github.com/mahiepit/ChuotVan)**: turn AI-sounding Vietnamese into natural Vietnamese
+- **[DiaChiMoi](https://github.com/mahiepit/DiaChiMoi)**: convert old Vietnamese addresses to the 2025 administrative units
+- **[SkillLint](https://github.com/mahiepit/SkillLint)**: lint Agent Skills (SKILL.md) for every coding agent
+
 ## ❤️ Support the project
 
 PaperViet is free and will always be free. If it saves you time, a small donation helps keep the project going. Thank you!
