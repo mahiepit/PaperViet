@@ -1,0 +1,14 @@
+{
+  "name": "paper-viet",
+  "displayName": "PaperViet",
+  "version": "1.0.0",
+  "description": "Read English academic papers (PDF) in Vietnamese: section-by-section translation with a consistent glossary, bilingual HTML reader, quick-read summaries and passage explanations.",
+  "author": {
+    "name": "Thảo Gia",
+    "url": "https://github.com/mahiepit"
+  },
+  "homepage": "https://github.com/mahiepit/PaperViet",
+  "repository": "https://github.com/mahiepit/PaperViet",
+  "license": "MIT",
+  "keywords": ["vietnamese", "tieng-viet", "translation", "academic-papers", "pdf", "research", "glossary", "bilingual"]
+}

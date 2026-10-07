@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+
+# Node (not used, but keep caches out)
+node_modules/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PaperViet work folders created while testing your own papers
+# (the committed demo in examples/ is kept)
+*.paperviet/
+!examples/*.paperviet/
+# rendered copies inside the demo work folder (the published ones are examples/*.vi.*)
+examples/*.paperviet/*.vi.html
+examples/*.paperviet/sample-paper.vi.md

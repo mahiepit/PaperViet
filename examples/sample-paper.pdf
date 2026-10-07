@@ -1,0 +1,161 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [8 0 R 10 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+7 0 obj
+<< /Length 4623 >>
+stream
+BT /F2 17.0 Tf 93.20 699.00 Td (Sparse Curriculum Sampling for Efficient Fine-Tuning) Tj ET
+BT /F2 17.0 Tf 199.33 678.00 Td (of Small Language Models) Tj ET
+BT /F1 10.5 Tf 245.89 656.50 Td (An Tran and Laura Hayes) Tj ET
+BT /F1 10.5 Tf 194.54 643.00 Td (Demo Institute of Computing \(fictional affiliation\)) Tj ET
+BT /F2 11.5 Tf 283.64 615.00 Td (Abstract) Tj ET
+BT /F1 10.0 Tf 97.00 600.20 Td (Fine-tuning a pretrained language model on a new task usually requires many passes over the) Tj ET
+BT /F1 10.0 Tf 97.00 587.40 Td (training set, even though a large fraction of the examples are already handled well after the) Tj ET
+BT /F1 10.0 Tf 97.00 574.60 Td (first epoch. We propose Sparse Curriculum Sampling \(SCS\), a simple data selection method) Tj ET
+BT /F1 10.0 Tf 97.00 561.80 Td (that estimates the difficulty of each example from its recent loss and samples hard examples) Tj ET
+BT /F1 10.0 Tf 97.00 549.00 Td (more often while still revisiting easy ones. SCS adds no trainable parameters and can be) Tj ET
+BT /F1 10.0 Tf 97.00 536.20 Td (implemented in a few lines of code. On three text classification benchmarks, SCS reaches the) Tj ET
+BT /F1 10.0 Tf 97.00 523.40 Td (accuracy of standard fine-tuning while using 38% fewer gradient updates, and it reduces the) Tj ET
+BT /F1 10.0 Tf 97.00 510.60 Td (variance across random seeds. We also discuss when the method fails and why its gains may) Tj ET
+BT /F1 10.0 Tf 97.00 497.80 Td (not transfer to generation tasks.) Tj ET
+BT /F2 12.0 Tf 72.00 464.80 Td (1 Introduction) Tj ET
+BT /F1 10.5 Tf 72.00 448.20 Td (Small language models with fewer than one billion parameters remain attractive for laboratories and) Tj ET
+BT /F1 10.5 Tf 72.00 434.60 Td (companies with limited computing budgets. However, fine-tuning such a model still involves a) Tj ET
+BT /F1 10.5 Tf 72.00 421.00 Td (trade-off between cost and accuracy: training for more epochs tends to improve the final score, but) Tj ET
+BT /F1 10.5 Tf 72.00 407.40 Td (most of the additional computation is spent on examples that the model has already learned.) Tj ET
+BT /F1 10.5 Tf 72.00 386.80 Td (Curriculum learning [2] addresses a related problem by presenting examples in a meaningful order,) Tj ET
+BT /F1 10.5 Tf 72.00 373.20 Td (usually from easy to hard. In practice, a fixed curriculum requires a difficulty measure defined before) Tj ET
+BT /F1 10.5 Tf 72.00 359.60 Td (training, which is often unavailable for new datasets. In this paper, we take a different view: instead) Tj ET
+BT /F1 10.5 Tf 72.00 346.00 Td (of ordering the data once, we let the model's own training signal decide how often each example) Tj ET
+BT /F1 10.5 Tf 72.00 332.40 Td (should be seen.) Tj ET
+BT /F1 10.5 Tf 72.00 311.80 Td (Our contributions are threefold. First, we introduce SCS, a sampling rule based on an exponential) Tj ET
+BT /F1 10.5 Tf 72.00 298.20 Td (moving average of the per-example loss. Second, we show empirically that SCS reduces the) Tj ET
+BT /F1 10.5 Tf 72.00 284.60 Td (number of gradient updates without hurting accuracy. Third, we analyze the failure cases of the) Tj ET
+BT /F1 10.5 Tf 72.00 271.00 Td (method, which, to the best of our knowledge, have not been reported for similar approaches.) Tj ET
+BT /F2 12.0 Tf 72.00 241.00 Td (2 Method) Tj ET
+BT /F1 10.5 Tf 72.00 224.40 Td (Let D = {\(x_i, y_i\)}, i = 1..N, be the training set and f\(x; w\) a classifier with weights w. At step t, we) Tj ET
+BT /F1 10.5 Tf 72.00 210.80 Td (keep a difficulty score s_i for every example, updated whenever the example is visited:) Tj ET
+BT /F4 10.0 Tf 156.00 185.80 Td (s_i <- beta * s_i + \(1 - beta\) * L\(f\(x_i; w\), y_i\)) Tj ET
+BT /F1 10.5 Tf 527.17 185.80 Td (\(1\)) Tj ET
+BT /F1 10.5 Tf 72.00 160.20 Td (where L is the cross-entropy loss and beta is a smoothing factor set to 0.9 in all experiments.) Tj ET
+BT /F1 10.5 Tf 72.00 146.60 Td (Examples are then drawn with probability) Tj ET
+BT /F4 10.0 Tf 159.00 121.60 Td (p_i = \(s_i + eps\)^alpha / sum_j \(s_j + eps\)^alpha) Tj ET
+BT /F1 10.5 Tf 527.17 121.60 Td (\(2\)) Tj ET
+BT /F1 10.5 Tf 72.00 96.00 Td (The exponent alpha controls how strongly the sampler focuses on hard examples: alpha = 0) Tj ET
+BT /F1 10.5 Tf 72.00 82.40 Td (recovers uniform sampling, whereas large values concentrate the probability mass on a small) Tj ET
+72.00 70.00 m 222.00 70.00 l 0.4 w S
+BT /F3 8 Tf 72.00 60.00 Td (* This is a fictional paper written for the PaperViet demo. The method and all numbers are invented; only the references are real.) Tj ET
+BT /F1 8 Tf 72.00 30.00 Td (PaperViet demo paper - not a real publication) Tj ET
+BT /F1 9 Tf 535.00 30.00 Td (1) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 5302 >>
+stream
+BT /F1 10.5 Tf 72.00 706.40 Td (subset. A small constant eps guarantees that every example keeps a non-zero probability of being) Tj ET
+BT /F1 10.5 Tf 72.00 692.80 Td (selected, so that easy examples are revisited and the model does not forget them. We optimize the) Tj ET
+BT /F1 10.5 Tf 72.00 679.20 Td (weights with Adam [4] and apply dropout [3] with rate 0.1, as in standard fine-tuning of Transformer) Tj ET
+BT /F1 10.5 Tf 72.00 665.60 Td (encoders [1].) Tj ET
+BT /F2 12.0 Tf 72.00 635.60 Td (3 Experiments) Tj ET
+BT /F1 10.5 Tf 72.00 619.00 Td (We fine-tune a 110M-parameter encoder on three public text classification datasets, denoted A, B) Tj ET
+BT /F1 10.5 Tf 72.00 605.40 Td (and C, with 12k, 45k and 120k training examples. Each configuration is repeated with five random) Tj ET
+BT /F1 10.5 Tf 72.00 591.80 Td (seeds, and we report the mean accuracy on the test set together with the standard deviation. The) Tj ET
+BT /F1 10.5 Tf 72.00 578.20 Td (baseline uses uniform sampling with the same learning rate of 2e-5 and a batch size of 32.) Tj ET
+BT /F3 9.5 Tf 72.00 555.20 Td (Table 1: Test accuracy \(%\) and number of gradient updates \(thousands\) on the three datasets. Values are) Tj ET
+BT /F3 9.5 Tf 72.00 543.20 Td (mean ± standard deviation over five seeds.) Tj ET
+82.00 539.20 m 530.00 539.20 l 0.6 w S
+BT /F2 9.5 Tf 92.00 525.20 Td (Method) Tj ET
+BT /F2 9.5 Tf 212.00 525.20 Td (Data A) Tj ET
+BT /F2 9.5 Tf 302.00 525.20 Td (Data B) Tj ET
+BT /F2 9.5 Tf 392.00 525.20 Td (Data C) Tj ET
+BT /F2 9.5 Tf 482.00 525.20 Td (Updates \(k\)) Tj ET
+82.00 521.20 m 530.00 521.20 l 0.6 w S
+BT /F1 9.5 Tf 92.00 511.20 Td (Uniform) Tj ET
+BT /F1 9.5 Tf 212.00 511.20 Td (86.1 ± 0.9) Tj ET
+BT /F1 9.5 Tf 302.00 511.20 Td (90.4 ± 0.5) Tj ET
+BT /F1 9.5 Tf 392.00 511.20 Td (93.2 ± 0.3) Tj ET
+BT /F1 9.5 Tf 482.00 511.20 Td (52.0) Tj ET
+BT /F1 9.5 Tf 92.00 497.20 Td (SCS \(alpha = 1\)) Tj ET
+BT /F1 9.5 Tf 212.00 497.20 Td (86.3 ± 0.6) Tj ET
+BT /F1 9.5 Tf 302.00 497.20 Td (90.6 ± 0.4) Tj ET
+BT /F1 9.5 Tf 392.00 497.20 Td (93.1 ± 0.2) Tj ET
+BT /F1 9.5 Tf 482.00 497.20 Td (32.2) Tj ET
+BT /F1 9.5 Tf 92.00 483.20 Td (SCS \(alpha = 2\)) Tj ET
+BT /F1 9.5 Tf 212.00 483.20 Td (85.2 ± 1.1) Tj ET
+BT /F1 9.5 Tf 302.00 483.20 Td (89.9 ± 0.7) Tj ET
+BT /F1 9.5 Tf 392.00 483.20 Td (92.8 ± 0.4) Tj ET
+BT /F1 9.5 Tf 482.00 483.20 Td (30.5) Tj ET
+82.00 477.20 m 530.00 477.20 l 0.6 w S
+BT /F1 10.5 Tf 72.00 451.60 Td (As shown in Table 1, SCS with alpha = 1 matches or slightly exceeds the baseline on two of the) Tj ET
+BT /F1 10.5 Tf 72.00 438.00 Td (three datasets and stays within 0.1 points on the third, while requiring 38% fewer updates \(32.2k) Tj ET
+BT /F1 10.5 Tf 72.00 424.40 Td (versus 52.0k\). The lower standard deviation suggests that focusing on informative examples also) Tj ET
+BT /F1 10.5 Tf 72.00 410.80 Td (makes training more stable. With alpha = 2, however, accuracy drops on every dataset, which) Tj ET
+BT /F1 10.5 Tf 72.00 397.20 Td (indicates that an overly aggressive sampler ignores easy examples for too long.) Tj ET
+BT /F2 12.0 Tf 72.00 367.20 Td (4 Limitations) Tj ET
+BT /F1 10.5 Tf 72.00 350.60 Td (Our study has several limitations. All experiments use classification tasks and a single model size,) Tj ET
+BT /F1 10.5 Tf 72.00 337.00 Td (so it is unclear whether the gains hold for text generation or for models with billions of parameters. In) Tj ET
+BT /F1 10.5 Tf 72.00 323.40 Td (addition, noisy labels may receive persistently high losses; in such cases SCS could repeatedly) Tj ET
+BT /F1 10.5 Tf 72.00 309.80 Td (sample mislabeled examples and amplify the noise.) Tj ET
+BT /F2 12.0 Tf 72.00 279.80 Td (5 Conclusion) Tj ET
+BT /F1 10.5 Tf 72.00 263.20 Td (We presented Sparse Curriculum Sampling, a lightweight method that reuses the training loss to) Tj ET
+BT /F1 10.5 Tf 72.00 249.60 Td (decide which examples deserve more attention. The method reduces the cost of fine-tuning in our) Tj ET
+BT /F1 10.5 Tf 72.00 236.00 Td (setting and is easy to combine with existing training pipelines. Future work will study adaptive values) Tj ET
+BT /F1 10.5 Tf 72.00 222.40 Td (of alpha and robustness to label noise.) Tj ET
+BT /F2 12.0 Tf 72.00 192.40 Td (References) Tj ET
+BT /F1 9.5 Tf 72.00 177.40 Td ([1] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin.) Tj ET
+BT /F1 9.5 Tf 72.00 165.40 Td (Attention is all you need. In Advances in Neural Information Processing Systems, 2017.) Tj ET
+BT /F1 9.5 Tf 72.00 150.40 Td ([2] Y. Bengio, J. Louradour, R. Collobert, and J. Weston. Curriculum learning. In Proceedings of the 26th) Tj ET
+BT /F1 9.5 Tf 72.00 138.40 Td (International Conference on Machine Learning, 2009.) Tj ET
+BT /F1 9.5 Tf 72.00 123.40 Td ([3] N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhutdinov. Dropout: A simple way to) Tj ET
+BT /F1 9.5 Tf 72.00 111.40 Td (prevent neural networks from overfitting. Journal of Machine Learning Research, 15:1929-1958, 2014.) Tj ET
+BT /F1 9.5 Tf 72.00 96.40 Td ([4] D. P. Kingma and J. Ba. Adam: A method for stochastic optimization. In International Conference on) Tj ET
+BT /F1 9.5 Tf 72.00 84.40 Td (Learning Representations, 2015.) Tj ET
+BT /F1 8 Tf 72.00 30.00 Td (PaperViet demo paper - not a real publication) Tj ET
+BT /F1 9 Tf 535.00 30.00 Td (2) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Title (Sparse Curriculum Sampling for Efficient Fine-Tuning of Small Language Models) /Producer (PaperViet tools/make_sample_pdf.py) >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000128 00000 n 
+0000000225 00000 n 
+0000000327 00000 n 
+0000000432 00000 n 
+0000000527 00000 n 
+0000005202 00000 n 
+0000005358 00000 n 
+0000010712 00000 n 
+0000010869 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R /Info 11 0 R >>
+startxref
+11025
+%%EOF

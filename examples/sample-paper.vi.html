@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PaperViet">
+<title>Sparse Curriculum Sampling: lấy mẫu theo giáo trình thưa để tinh chỉnh hiệu quả các mô hình ngôn ngữ nhỏ</title>
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --text: #1d1f23; --muted: #5d6470; --faint: #8a909a;
+  --line: #e6e2d9; --hover: #f3f0e8; --accent: #b4452f; --accent-soft: #f6e3dc;
+  --code-bg: #f2efe8; --missing: #a15c00; --on-accent: #ffffff; --shadow: 0 10px 40px rgba(0,0,0,.14);
+  --fs: 17px; --maxw: 1180px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1c1f23; --text: #e7e4dd; --muted: #a3a8b0; --faint: #7c828b;
+    --line: #2c3036; --hover: #22262b; --accent: #f08a6e; --accent-soft: #3a2621;
+    --code-bg: #23272c; --missing: #e0a040; --on-accent: #1b1310; --shadow: 0 10px 40px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1c1f23; --text: #e7e4dd; --muted: #a3a8b0; --faint: #7c828b;
+  --line: #2c3036; --hover: #22262b; --accent: #f08a6e; --accent-soft: #3a2621;
+  --code-bg: #23272c; --missing: #e0a040; --on-accent: #1b1310; --shadow: 0 10px 40px rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 76px; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 400 var(--fs)/1.68 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+a { color: var(--accent); }
+code, pre, .math { font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: .88em; }
+code, .math { background: var(--code-bg); padding: .05em .3em; border-radius: 4px; }
+.cite { color: var(--muted); white-space: nowrap; }
+
+/* top bar */
+.bar { position: sticky; top: 0; z-index: 20; background: var(--bg); background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(8px); -webkit-backdrop-filter: saturate(1.4) blur(8px);
+  border-bottom: 1px solid var(--line); }
+.bar-in { max-width: var(--maxw); margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.brand { font-weight: 700; letter-spacing: .01em; font-size: 15px; margin-right: auto; color: var(--text); text-decoration: none; }
+.brand span { color: var(--accent); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+.seg button, .btn { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--muted);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer; line-height: 1.2; min-height: 34px; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.btn:hover, .seg button:hover { color: var(--text); }
+.seg button[aria-pressed="true"]:hover { color: var(--on-accent); }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tools { display: inline-flex; gap: 6px; }
+
+/* document */
+main { max-width: var(--maxw); margin: 0 auto; padding: 28px 16px 64px; }
+.head { margin: 8px auto 28px; max-width: 900px; text-align: center; }
+.head h1 { font-size: 1.75em; line-height: 1.3; margin: 0 0 .35em; letter-spacing: -.01em; }
+.head .t-en { color: var(--muted); font-size: .98em; margin: 0 0 .8em; font-style: italic; }
+.head .authors { color: var(--muted); font-size: .9em; margin: 0 0 .6em; }
+.head .authors span { display: block; }
+.head .meta { color: var(--faint); font-size: .8em; margin: 0; }
+.progress { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; max-width: 320px; margin: 12px auto 0; }
+.progress i { display: block; height: 100%; background: var(--accent); }
+.disclaimer { font-size: .78em; color: var(--faint); margin-top: 8px; }
+
+details.quick { max-width: 900px; margin: 0 auto 32px; background: var(--surface); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 10px; padding: 6px 20px; }
+details.quick > summary { cursor: pointer; font-weight: 700; padding: 8px 0; color: var(--accent); }
+.md h2, .md h3, .md h4 { font-size: 1.02em; margin: 1.1em 0 .3em; }
+.md table, .notes table { border-collapse: collapse; width: 100%; font-size: .9em; margin: .6em 0; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; }
+.md blockquote { margin: .6em 0; padding: 0 12px; border-left: 3px solid var(--line); color: var(--muted); }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 36px; padding: 6px 12px; margin: 0 -12px; border-radius: 8px; }
+.row > * { min-width: 0; }
+.row:hover { background: var(--hover); }
+.row:target { background: var(--accent-soft); }
+.row > div > p:first-child, .row h2, .row h3, .row h4 { margin-top: .35em; }
+.row p { margin: .35em 0 .6em; }
+.en { color: var(--muted); font-size: .94em; }
+.vi { color: var(--text); }
+.row h2, .row h3, .row h4 { line-height: 1.3; margin-bottom: .2em; }
+.row h2 { font-size: 1.35em; margin-top: 1.1em; }
+.row h3 { font-size: 1.15em; margin-top: .9em; }
+.row h4 { font-size: 1.02em; }
+.row h2.en, .row h3.en, .row h4.en { color: var(--muted); font-weight: 600; }
+.t-abstract .vi, .t-abstract .en { font-size: .97em; }
+.t-caption { font-size: .9em; }
+.t-caption p { font-style: italic; }
+.t-footnote { font-size: .82em; }
+.t-footnote p { margin: .2em 0; }
+.full { grid-template-columns: 1fr; }
+.full .both { min-width: 0; }
+.t-authors { text-align: center; color: var(--muted); font-size: .92em; }
+.t-authors p { margin: 0; }
+.t-reference { font-size: .86em; color: var(--muted); }
+.t-reference p { margin: .15em 0; padding-left: 1.6em; text-indent: -1.6em; }
+pre.verbatim { background: var(--code-bg); border-radius: 8px; padding: 10px 14px; overflow-x: auto; margin: .4em 0 .8em;
+  white-space: pre; line-height: 1.5; color: var(--text); }
+.t-equation pre.verbatim { text-align: center; }
+.tbl { overflow-x: auto; margin: .4em 0 .9em; }
+.tbl table { border-collapse: collapse; width: 100%; font-size: .88em; font-variant-numeric: tabular-nums; }
+.tbl th, .tbl td { padding: 5px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.tbl thead th { border-top: 1.5px solid var(--text); border-bottom: 1px solid var(--text); font-weight: 600; }
+.tbl tbody tr:last-child td { border-bottom: 1.5px solid var(--text); }
+.en .tbl { color: var(--muted); }
+.missing { color: var(--missing); font-style: italic; font-size: .92em; }
+.notes { max-width: 900px; margin: 40px auto 0; border-top: 1px solid var(--line); padding-top: 12px; }
+
+/* modes */
+body.mode-vi .row, body.mode-en .row { grid-template-columns: 1fr; max-width: 780px; margin-left: auto; margin-right: auto; }
+body.mode-vi .row .en { display: none; }
+body.mode-en .row .vi { display: none; }
+body.mode-en .en { color: var(--text); font-size: 1em; }
+body.mode-vi .row:not(.full) .vi { cursor: pointer; }
+body.mode-vi .row.peek .en { display: block; border-left: 3px solid var(--line); padding-left: 12px; margin-bottom: .4em; }
+.hint { display: none; text-align: center; color: var(--faint); font-size: .8em; margin: -16px 0 18px; }
+body.mode-vi .hint { display: block; }
+
+/* drawers */
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.28); z-index: 30; display: none; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 92vw); background: var(--surface);
+  border-left: 1px solid var(--line); box-shadow: var(--shadow); z-index: 40; transform: translateX(105%);
+  transition: transform .2s ease; display: flex; flex-direction: column; }
+.drawer.open { transform: none; }
+body.drawer-open .scrim { display: block; }
+.drawer header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.drawer header h2 { font-size: 16px; margin: 0; margin-right: auto; }
+.drawer .scroll { overflow-y: auto; padding: 8px 16px 24px; font-size: 15px; }
+.toc ul { list-style: none; padding: 0; margin: 0; }
+.toc li a { display: block; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: var(--text); }
+.toc li a:hover { background: var(--hover); }
+.toc li.l2 a { padding-left: 22px; font-size: .95em; }
+.toc li.l3 a { padding-left: 36px; font-size: .9em; color: var(--muted); }
+.gloss input { width: 100%; font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); margin: 8px 0; }
+.gloss table { width: 100%; border-collapse: collapse; }
+.gloss td { border-bottom: 1px solid var(--line); padding: 6px 4px; vertical-align: top; }
+.gloss td:first-child { color: var(--muted); width: 44%; }
+.gloss td:last-child { color: var(--faint); text-align: right; font-size: .85em; width: 2.5em; }
+.gloss small { color: var(--faint); }
+footer { text-align: center; color: var(--faint); font-size: 13px; padding: 24px 16px 40px; border-top: 1px solid var(--line); }
+
+@media (max-width: 820px) {
+  :root { --fs: 16px; }
+  .row { grid-template-columns: 1fr; padding: 6px 8px; margin: 0 -8px; }
+  body.mode-bi .row .en { border-left: 3px solid var(--line); padding-left: 10px; margin-top: .4em; }
+  body.mode-bi .row h2.en, body.mode-bi .row h3.en, body.mode-bi .row h4.en { border: 0; padding: 0; margin-bottom: 0; font-size: .95em; }
+  .head h1 { font-size: 1.45em; }
+  .bar-in { padding: 8px 12px; gap: 6px; }
+  .brand { display: none; }
+  .seg button, .btn { padding: 4px 9px; font-size: 13px; min-height: 30px; }
+  .tools { gap: 4px; }
+  main { padding-top: 18px; }
+  details.quick { padding: 4px 14px; }
+}
+@media print {
+  .bar, .drawer, .scrim, .hint, footer { display: none !important; }
+  body { background: #fff; color: #000; }
+  .row { break-inside: avoid; }
+  details.quick { border: 1px solid #ccc; }
+}
+</style>
+</head>
+<body class="mode-bi">
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="https://github.com/mahiepit/PaperViet" target="_blank" rel="noopener noreferrer">Paper<span>Viet</span></a>
+  <div class="seg" role="group" aria-label="Chế độ hiển thị">
+    <button type="button" data-mode="bi" aria-pressed="true">Song ngữ</button>
+    <button type="button" data-mode="vi" aria-pressed="false">Tiếng Việt</button>
+    <button type="button" data-mode="en" aria-pressed="false">English</button>
+  </div>
+  <div class="tools">
+    <button type="button" class="btn" data-open="toc" aria-label="Mục lục">Mục lục</button>
+    <button type="button" class="btn" data-open="gloss" aria-label="Thuật ngữ">Thuật ngữ</button>
+    <button type="button" class="btn" id="fs-down" aria-label="Chữ nhỏ hơn">A−</button>
+    <button type="button" class="btn" id="fs-up" aria-label="Chữ lớn hơn">A+</button>
+    <button type="button" class="btn" id="theme" aria-label="Đổi giao diện sáng/tối">◐</button>
+  </div>
+</div></div>
+
+<main>
+  <header class="head">
+    <h1 lang="vi">Sparse Curriculum Sampling: lấy mẫu theo giáo trình thưa để tinh chỉnh hiệu quả các mô hình ngôn ngữ nhỏ</h1>
+    <p class="t-en" lang="en">Sparse Curriculum Sampling for Efficient Fine-Tuning of Small Language Models</p>
+    <p class="authors"><span>An Tran and Laura Hayes</span><span>Demo Institute of Computing (fictional affiliation)</span></p>
+    <p class="meta">sample-paper.pdf · 2 trang · đã dịch 21/21 khối (100%)</p>
+    <div class="progress" aria-hidden="true"><i style="width: 100%"></i></div>
+    <p class="disclaimer">Bản dịch do AI thực hiện với PaperViet. Hãy đối chiếu bản gốc khi trích dẫn hoặc dùng số liệu.</p>
+  </header>
+  <details class="quick" open><summary>Đọc nhanh</summary><div class="md"><h3>Bài báo nói gì (3 câu)</h3>
+<p>Tinh chỉnh mô hình ngôn ngữ nhỏ tốn nhiều lượt cập nhật cho những mẫu mà mô hình đã học xong. Tác giả đề xuất SCS: theo dõi giá trị mất mát của từng mẫu bằng trung bình trượt hàm mũ, rồi lấy mẫu khó thường xuyên hơn mà vẫn giữ xác suất nhỏ cho mẫu dễ. Trên ba tập dữ liệu phân loại văn bản, SCS giữ nguyên độ chính xác nhưng cần ít hơn 38% số lượt cập nhật.</p>
+<h3>Đóng góp chính</h3>
+<ul><li>Một quy tắc lấy mẫu không thêm tham số: điểm độ khó s_i cập nhật theo phương trình (1), xác suất lấy mẫu tỉ lệ với (s_i + eps)^alpha theo phương trình (2).</li><li>Bằng chứng thực nghiệm: cùng độ chính xác với ít lượt cập nhật hơn (32.2k so với 52.0k) và phương sai giữa các seed thấp hơn.</li><li>Phân tích trường hợp thất bại: alpha quá lớn (alpha = 2) làm giảm độ chính xác; nhãn nhiễu có thể bị lấy mẫu lặp lại.</li></ul>
+<h3>Phương pháp</h3>
+<p>Mỗi mẫu có một điểm độ khó, là trung bình trượt của giá trị mất mát với hệ số beta = 0.9. Xác suất chọn một mẫu tỉ lệ với điểm độ khó lũy thừa alpha: alpha = 0 là lấy mẫu đều như thường lệ, alpha càng lớn thì càng dồn vào mẫu khó. Hằng số eps giúp mẫu dễ không bao giờ bị loại hẳn.</p>
+<h3>Kết quả</h3>
+<table><thead><tr><th>Cấu hình</th><th>Dữ liệu A</th><th>Dữ liệu B</th><th>Dữ liệu C</th><th>Số cập nhật (k)</th></tr></thead><tbody><tr><td>Lấy mẫu đều</td><td>86.1 ± 0.9</td><td>90.4 ± 0.5</td><td>93.2 ± 0.3</td><td>52.0</td></tr><tr><td>SCS (alpha = 1)</td><td>86.3 ± 0.6</td><td>90.6 ± 0.4</td><td>93.1 ± 0.2</td><td>32.2</td></tr><tr><td>SCS (alpha = 2)</td><td>85.2 ± 1.1</td><td>89.9 ± 0.7</td><td>92.8 ± 0.4</td><td>30.5</td></tr></tbody></table>
+<p>Với alpha = 1, SCS nhỉnh hơn trên A và B, kém 0.1 điểm trên C, nhưng tiết kiệm khoảng 38% số lượt cập nhật.</p>
+<h3>Hạn chế</h3>
+<ul><li>Chỉ thử trên tác vụ phân loại và một kích thước mô hình (110M tham số); chưa biết có đúng với sinh văn bản hay mô hình lớn hơn.</li><li>Dễ khuếch đại nhãn nhiễu vì mẫu gán nhãn sai luôn có giá trị mất mát cao.</li><li>Chênh lệch độ chính xác rất nhỏ so với độ lệch chuẩn, nên "ngang bằng" là cách diễn đạt hợp lý hơn "tốt hơn".</li></ul>
+<h3>Câu hỏi nên đặt ra khi đọc</h3>
+<ul><li>Chi phí tính toán thêm để cập nhật s_i là bao nhiêu so với phần tiết kiệm được?</li><li>Kết quả có giữ nguyên nếu đổi alpha theo thời gian thay vì cố định?</li></ul>
+<blockquote><p>Lưu ý: đây là bài báo hư cấu dùng để minh hoạ PaperViet; mọi con số đều là giả định.</p></blockquote></div></details>
+  <p class="hint">Chạm vào một đoạn để xem câu gốc tiếng Anh.</p>
+  <article class="blocks">
+<div class="row t-heading" id="b3"><h2 class="en" lang="en">Abstract</h2><h2 class="vi" lang="vi">Tóm tắt</h2></div>
+<div class="row t-abstract" id="b4"><div class="en" lang="en"><p>Fine-tuning a pretrained language model on a new task usually requires many passes over the training set, even though a large fraction of the examples are already handled well after the first epoch. We propose Sparse Curriculum Sampling (SCS), a simple data selection method that estimates the difficulty of each example from its recent loss and samples hard examples more often while still revisiting easy ones. SCS adds no trainable parameters and can be implemented in a few lines of code. On three text classification benchmarks, SCS reaches the accuracy of standard fine-tuning while using 38% fewer gradient updates, and it reduces the variance across random seeds. We also discuss when the method fails and why its gains may not transfer to generation tasks.</p></div><div class="vi" lang="vi"><p>Tinh chỉnh (fine-tuning) một mô hình ngôn ngữ (language model) đã tiền huấn luyện cho một tác vụ mới thường đòi hỏi duyệt qua tập huấn luyện (training set) nhiều lượt, dù phần lớn mẫu đã được mô hình xử lý tốt ngay sau epoch đầu tiên. Chúng tôi đề xuất Sparse Curriculum Sampling (SCS), một phương pháp chọn lọc dữ liệu (data selection) đơn giản: ước lượng độ khó của từng mẫu dựa trên giá trị mất mát gần nhất của mẫu đó, rồi lấy mẫu khó thường xuyên hơn nhưng vẫn quay lại các mẫu dễ. SCS không thêm tham số huấn luyện nào và có thể cài đặt chỉ bằng vài dòng mã. Trên ba bộ đánh giá phân loại văn bản (text classification), SCS đạt độ chính xác (accuracy) ngang với tinh chỉnh thông thường nhưng dùng ít hơn 38% số lượt cập nhật gradient, đồng thời giảm phương sai (variance) giữa các seed ngẫu nhiên (random seed). Chúng tôi cũng thảo luận khi nào phương pháp thất bại và vì sao lợi ích của nó có thể không chuyển sang các tác vụ sinh văn bản.</p></div></div>
+<div class="row t-heading" id="b5"><h2 class="en" lang="en">1 Introduction</h2><h2 class="vi" lang="vi">1 Giới thiệu</h2></div>
+<div class="row t-paragraph" id="b6"><div class="en" lang="en"><p>Small language models with fewer than one billion parameters remain attractive for laboratories and companies with limited computing budgets. However, fine-tuning such a model still involves a trade-off between cost and accuracy: training for more epochs tends to improve the final score, but most of the additional computation is spent on examples that the model has already learned.</p></div><div class="vi" lang="vi"><p>Các mô hình ngôn ngữ nhỏ, với dưới một tỷ tham số, vẫn hấp dẫn đối với các phòng thí nghiệm và doanh nghiệp có ngân sách tính toán hạn chế. Tuy nhiên, tinh chỉnh một mô hình như vậy vẫn buộc phải đánh đổi (trade-off) giữa chi phí và độ chính xác: huấn luyện thêm nhiều epoch thường cải thiện điểm số cuối cùng, nhưng phần lớn lượng tính toán tăng thêm lại dồn vào những mẫu mà mô hình đã học được.</p></div></div>
+<div class="row t-paragraph" id="b7"><div class="en" lang="en"><p>Curriculum learning <span class="cite">[2]</span> addresses a related problem by presenting examples in a meaningful order, usually from easy to hard. In practice, a fixed curriculum requires a difficulty measure defined before training, which is often unavailable for new datasets. In this paper, we take a different view: instead of ordering the data once, we let the model's own training signal decide how often each example should be seen.</p></div><div class="vi" lang="vi"><p>Học theo giáo trình (curriculum learning) <span class="cite">[2]</span> giải quyết một vấn đề gần với vấn đề này bằng cách đưa các mẫu vào huấn luyện theo một trình tự có ý nghĩa, thường là từ dễ đến khó. Trên thực tế, một giáo trình cố định cần có thước đo độ khó xác định từ trước khi huấn luyện, điều mà các tập dữ liệu (dataset) mới thường không có. Trong bài báo này, chúng tôi tiếp cận theo hướng khác: thay vì sắp xếp dữ liệu một lần, chúng tôi để chính tín hiệu huấn luyện của mô hình quyết định mỗi mẫu cần được xem bao nhiêu lần.</p></div></div>
+<div class="row t-paragraph" id="b8"><div class="en" lang="en"><p>Our contributions are threefold. First, we introduce SCS, a sampling rule based on an exponential moving average of the per-example loss. Second, we show empirically that SCS reduces the number of gradient updates without hurting accuracy. Third, we analyze the failure cases of the method, which, to the best of our knowledge, have not been reported for similar approaches.</p></div><div class="vi" lang="vi"><p>Bài báo có ba đóng góp. Thứ nhất, chúng tôi giới thiệu SCS, một quy tắc lấy mẫu dựa trên trung bình trượt hàm mũ (exponential moving average) của giá trị mất mát trên từng mẫu. Thứ hai, chúng tôi chỉ ra bằng thực nghiệm rằng SCS giảm số lượt cập nhật gradient mà không làm giảm độ chính xác. Thứ ba, chúng tôi phân tích các trường hợp phương pháp thất bại; theo hiểu biết của chúng tôi, những trường hợp này chưa từng được báo cáo với các cách tiếp cận tương tự.</p></div></div>
+<div class="row t-heading" id="b9"><h2 class="en" lang="en">2 Method</h2><h2 class="vi" lang="vi">2 Phương pháp</h2></div>
+<div class="row t-paragraph" id="b10"><div class="en" lang="en"><p>Let D = {(x_i, y_i)}, i = 1..N, be the training set and f(x; w) a classifier with weights w. At step t, we keep a difficulty score s_i for every example, updated whenever the example is visited:</p></div><div class="vi" lang="vi"><p>Gọi D = {(x_i, y_i)}, i = 1..N, là tập huấn luyện và f(x; w) là bộ phân loại (classifier) với trọng số w. Tại bước t, chúng tôi lưu một điểm độ khó s_i cho mỗi mẫu và cập nhật điểm này mỗi khi mẫu được duyệt tới:</p></div></div>
+<div class="row t-equation full" id="b11" title="Công thức"><div class="both"><pre class="verbatim">s_i &lt;- beta * s_i + (1 - beta) * L(f(x_i; w), y_i)  (1)</pre></div></div>
+<div class="row t-paragraph" id="b12"><div class="en" lang="en"><p>where L is the cross-entropy loss and beta is a smoothing factor set to 0.9 in all experiments. Examples are then drawn with probability</p></div><div class="vi" lang="vi"><p>trong đó L là hàm mất mát entropy chéo (cross-entropy loss) và beta là hệ số làm trơn, đặt bằng 0.9 trong mọi thí nghiệm. Sau đó, các mẫu được rút ra với xác suất (probability)</p></div></div>
+<div class="row t-equation full" id="b13" title="Công thức"><div class="both"><pre class="verbatim">p_i = (s_i + eps)^alpha / sum_j (s_j + eps)^alpha  (2)</pre></div></div>
+<div class="row t-paragraph" id="b14"><div class="en" lang="en"><p>The exponent alpha controls how strongly the sampler focuses on hard examples: alpha = 0 recovers uniform sampling, whereas large values concentrate the probability mass on a small subset. A small constant eps guarantees that every example keeps a non-zero probability of being selected, so that easy examples are revisited and the model does not forget them. We optimize the weights with Adam <span class="cite">[4]</span> and apply dropout <span class="cite">[3]</span> with rate 0.1, as in standard fine-tuning of Transformer encoders <span class="cite">[1]</span>.</p></div><div class="vi" lang="vi"><p>Số mũ alpha quyết định mức độ bộ lấy mẫu (sampler) tập trung vào các mẫu khó: alpha = 0 cho lại cách lấy mẫu đều (uniform sampling), còn giá trị lớn sẽ dồn khối lượng xác suất vào một tập con nhỏ. Hằng số nhỏ eps bảo đảm mọi mẫu luôn có xác suất được chọn khác 0, nhờ đó các mẫu dễ vẫn được xem lại và mô hình không quên chúng. Chúng tôi tối ưu trọng số bằng Adam <span class="cite">[4]</span> và áp dụng dropout <span class="cite">[3]</span> với tỉ lệ 0.1, như khi tinh chỉnh thông thường các bộ mã hóa (encoder) Transformer <span class="cite">[1]</span>.</p></div></div>
+<div class="row t-footnote" id="b15"><div class="en" lang="en"><p>* This is a fictional paper written for the PaperViet demo. The method and all numbers are invented; only the references are real.</p></div><div class="vi" lang="vi"><p>* Đây là bài báo hư cấu, viết riêng cho bản demo của PaperViet. Phương pháp và mọi con số đều là giả định; chỉ có các tài liệu tham khảo là có thật.</p></div></div>
+<div class="row t-heading" id="b16"><h2 class="en" lang="en">3 Experiments</h2><h2 class="vi" lang="vi">3 Thực nghiệm</h2></div>
+<div class="row t-paragraph" id="b17"><div class="en" lang="en"><p>We fine-tune a 110M-parameter encoder on three public text classification datasets, denoted A, B and C, with 12k, 45k and 120k training examples. Each configuration is repeated with five random seeds, and we report the mean accuracy on the test set together with the standard deviation. The baseline uses uniform sampling with the same learning rate of 2e-5 and a batch size of 32.</p></div><div class="vi" lang="vi"><p>Chúng tôi tinh chỉnh một bộ mã hóa 110M tham số trên ba tập dữ liệu phân loại văn bản công khai, ký hiệu là A, B và C, lần lượt gồm 12k, 45k và 120k mẫu huấn luyện. Mỗi cấu hình được lặp lại với năm seed ngẫu nhiên; chúng tôi báo cáo độ chính xác trung bình trên tập kiểm tra (test set) kèm độ lệch chuẩn (standard deviation). Phương pháp cơ sở dùng cách lấy mẫu đều với cùng tốc độ học (learning rate) 2e-5 và kích thước lô (batch size) 32.</p></div></div>
+<div class="row t-caption" id="b18"><div class="en" lang="en"><p>Table 1: Test accuracy (%) and number of gradient updates (thousands) on the three datasets. Values are mean ± standard deviation over five seeds.</p></div><div class="vi" lang="vi"><p>Bảng 1: Độ chính xác trên tập kiểm tra (%) và số lượt cập nhật gradient (nghìn lượt) trên ba tập dữ liệu. Giá trị là trung bình ± độ lệch chuẩn qua năm seed.</p></div></div>
+<div class="row t-table" id="b19"><div class="en" lang="en"><div class="tbl"><table><thead><tr><th>Method</th><th>Data A</th><th>Data B</th><th>Data C</th><th>Updates (k)</th></tr></thead><tbody><tr><td>Uniform</td><td>86.1 ± 0.9</td><td>90.4 ± 0.5</td><td>93.2 ± 0.3</td><td>52.0</td></tr><tr><td>SCS (alpha = 1)</td><td>86.3 ± 0.6</td><td>90.6 ± 0.4</td><td>93.1 ± 0.2</td><td>32.2</td></tr><tr><td>SCS (alpha = 2)</td><td>85.2 ± 1.1</td><td>89.9 ± 0.7</td><td>92.8 ± 0.4</td><td>30.5</td></tr></tbody></table></div></div><div class="vi" lang="vi"><div class="tbl"><table><thead><tr><th>Phương pháp</th><th>Dữ liệu A</th><th>Dữ liệu B</th><th>Dữ liệu C</th><th>Số cập nhật (k)</th></tr></thead><tbody><tr><td>Lấy mẫu đều</td><td>86.1 ± 0.9</td><td>90.4 ± 0.5</td><td>93.2 ± 0.3</td><td>52.0</td></tr><tr><td>SCS (alpha = 1)</td><td>86.3 ± 0.6</td><td>90.6 ± 0.4</td><td>93.1 ± 0.2</td><td>32.2</td></tr><tr><td>SCS (alpha = 2)</td><td>85.2 ± 1.1</td><td>89.9 ± 0.7</td><td>92.8 ± 0.4</td><td>30.5</td></tr></tbody></table></div></div></div>
+<div class="row t-paragraph" id="b20"><div class="en" lang="en"><p>As shown in Table 1, SCS with alpha = 1 matches or slightly exceeds the baseline on two of the three datasets and stays within 0.1 points on the third, while requiring 38% fewer updates (32.2k versus 52.0k). The lower standard deviation suggests that focusing on informative examples also makes training more stable. With alpha = 2, however, accuracy drops on every dataset, which indicates that an overly aggressive sampler ignores easy examples for too long.</p></div><div class="vi" lang="vi"><p>Như Bảng 1 cho thấy, SCS với alpha = 1 ngang bằng hoặc nhỉnh hơn một chút so với phương pháp cơ sở trên hai trong ba tập dữ liệu và chỉ kém không quá 0.1 điểm trên tập còn lại, trong khi cần ít hơn 38% số lượt cập nhật (32.2k so với 52.0k). Độ lệch chuẩn thấp hơn gợi ý rằng khi tập trung vào các mẫu giàu thông tin, quá trình huấn luyện cũng ổn định hơn. Tuy nhiên, với alpha = 2, độ chính xác giảm trên mọi tập dữ liệu, cho thấy một bộ lấy mẫu tập trung quá mức đã bỏ qua các mẫu dễ trong thời gian quá dài.</p></div></div>
+<div class="row t-heading" id="b21"><h2 class="en" lang="en">4 Limitations</h2><h2 class="vi" lang="vi">4 Hạn chế</h2></div>
+<div class="row t-paragraph" id="b22"><div class="en" lang="en"><p>Our study has several limitations. All experiments use classification tasks and a single model size, so it is unclear whether the gains hold for text generation or for models with billions of parameters. In addition, noisy labels may receive persistently high losses; in such cases SCS could repeatedly sample mislabeled examples and amplify the noise.</p></div><div class="vi" lang="vi"><p>Nghiên cứu của chúng tôi có một số hạn chế. Mọi thí nghiệm đều dùng tác vụ phân loại và một kích thước mô hình duy nhất, nên chưa rõ lợi ích này có còn đúng với bài toán sinh văn bản (text generation) hay với các mô hình hàng tỷ tham số hay không. Ngoài ra, các nhãn nhiễu (noisy label) có thể liên tục nhận giá trị mất mát cao; khi đó, SCS có thể lặp đi lặp lại việc lấy những mẫu bị gán nhãn sai và khuếch đại nhiễu.</p></div></div>
+<div class="row t-heading" id="b23"><h2 class="en" lang="en">5 Conclusion</h2><h2 class="vi" lang="vi">5 Kết luận</h2></div>
+<div class="row t-paragraph" id="b24"><div class="en" lang="en"><p>We presented Sparse Curriculum Sampling, a lightweight method that reuses the training loss to decide which examples deserve more attention. The method reduces the cost of fine-tuning in our setting and is easy to combine with existing training pipelines. Future work will study adaptive values of alpha and robustness to label noise.</p></div><div class="vi" lang="vi"><p>Chúng tôi đã trình bày Sparse Curriculum Sampling, một phương pháp gọn nhẹ tận dụng lại giá trị mất mát huấn luyện để quyết định những mẫu nào cần được chú ý nhiều hơn. Trong thiết lập của chúng tôi, phương pháp này giảm chi phí tinh chỉnh và dễ kết hợp với các quy trình huấn luyện sẵn có. Hướng nghiên cứu tiếp theo sẽ xem xét các giá trị alpha thích nghi và khả năng chống chịu nhiễu nhãn (robustness to label noise).</p></div></div>
+<div class="row t-heading" id="b25"><h2 class="en" lang="en">References</h2><h2 class="vi" lang="vi">Tài liệu tham khảo</h2></div>
+<div class="row t-reference full" id="b26" title="Tài liệu tham khảo"><div class="both"><p><span class="cite">[1]</span> A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems, 2017.</p></div></div>
+<div class="row t-reference full" id="b27" title="Tài liệu tham khảo"><div class="both"><p><span class="cite">[2]</span> Y. Bengio, J. Louradour, R. Collobert, and J. Weston. Curriculum learning. In Proceedings of the 26th International Conference on Machine Learning, 2009.</p></div></div>
+<div class="row t-reference full" id="b28" title="Tài liệu tham khảo"><div class="both"><p><span class="cite">[3]</span> N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhutdinov. Dropout: A simple way to prevent neural networks from overfitting. Journal of Machine Learning Research, 15:1929-1958, 2014.</p></div></div>
+<div class="row t-reference full" id="b29" title="Tài liệu tham khảo"><div class="both"><p><span class="cite">[4]</span> D. P. Kingma and J. Ba. Adam: A method for stochastic optimization. In International Conference on Learning Representations, 2015.</p></div></div>
+  </article>
+  <section class="notes" id="ghi-chu"><h2>Ghi chú &amp; giải thích</h2><div class="md"><h4>Giải thích phương trình (2)</h4>
+<blockquote><p>p_i = (s_i + eps)^alpha / sum_j (s_j + eps)^alpha</p></blockquote>
+<p>Hiểu đơn giản: mẫu nào đang "khó" (giá trị mất mát gần đây cao, nên s_i lớn) thì được bốc thăm nhiều hơn.</p>
+<ul><li><strong>Tử số</strong> <code>(s_i + eps)^alpha</code> là "trọng số" của mẫu i. Cộng thêm eps để mẫu dễ (s_i gần 0) vẫn có trọng số dương.</li><li><strong>Mẫu số</strong> <code>sum_j (s_j + eps)^alpha</code> là tổng trọng số của mọi mẫu, dùng để chuẩn hoá cho tổng các p_i bằng 1.</li><li><strong>alpha</strong> điều chỉnh mức "thiên vị": alpha = 0 thì mọi trọng số bằng 1, tức lấy mẫu đều; alpha = 1 thì xác suất tỉ lệ thuận với độ khó; alpha = 2 thì mẫu khó được ưu tiên rất mạnh. Bảng 1 cho thấy alpha = 2 đã ưu tiên quá đà.</li></ul>
+<p>Ví dụ nhỏ: có hai mẫu với s_1 = 0.1 và s_2 = 0.9, eps rất nhỏ. Với alpha = 1, mẫu 2 được chọn với xác suất khoảng 0.9; với alpha = 2, khoảng 0.99, nên mẫu 1 gần như không bao giờ được xem lại.</p></div></section>
+</main>
+<footer>Tạo ngày 2026-10-07 bằng <a href="https://github.com/mahiepit/PaperViet" target="_blank" rel="noopener noreferrer">PaperViet</a> · đọc bài báo tiếng Anh bằng tiếng Việt</footer>
+
+<div class="scrim" data-close></div>
+<aside class="drawer toc" id="toc" aria-label="Mục lục">
+  <header><h2>Mục lục</h2><button type="button" class="btn" data-close aria-label="Đóng">✕</button></header>
+  <div class="scroll"><ul>
+<li class="l1"><a href="#b3">Tóm tắt</a></li>
+<li class="l1"><a href="#b5">1 Giới thiệu</a></li>
+<li class="l1"><a href="#b9">2 Phương pháp</a></li>
+<li class="l1"><a href="#b16">3 Thực nghiệm</a></li>
+<li class="l1"><a href="#b21">4 Hạn chế</a></li>
+<li class="l1"><a href="#b23">5 Kết luận</a></li>
+<li class="l1"><a href="#b25">Tài liệu tham khảo</a></li>
+<li class="l1"><a href="#ghi-chu">Ghi chú &amp; giải thích</a></li>
+  </ul></div>
+</aside>
+<aside class="drawer gloss" id="gloss" aria-label="Thuật ngữ">
+  <header><h2>Thuật ngữ (34)</h2><button type="button" class="btn" data-close aria-label="Đóng">✕</button></header>
+  <div class="scroll">
+    <input type="search" id="gloss-q" placeholder="Lọc: tiếng Anh hoặc tiếng Việt…" aria-label="Lọc thuật ngữ">
+    <table><tbody>
+<tr data-k="accuracy độ chính xác"><td lang="en">accuracy</td><td lang="vi"><b>độ chính xác</b></td><td>6</td></tr><tr data-k="batch size kích thước lô"><td lang="en">batch size</td><td lang="vi"><b>kích thước lô</b></td><td>1</td></tr><tr data-k="classifier bộ phân loại"><td lang="en">classifier</td><td lang="vi"><b>bộ phân loại</b></td><td>1</td></tr><tr data-k="cross-entropy loss hàm mất mát entropy chéo"><td lang="en">cross-entropy loss</td><td lang="vi"><b>hàm mất mát entropy chéo</b></td><td>1</td></tr><tr data-k="curriculum learning học theo giáo trình"><td lang="en">curriculum learning</td><td lang="vi"><b>học theo giáo trình</b></td><td>1</td></tr><tr data-k="data selection chọn lọc dữ liệu"><td lang="en">data selection</td><td lang="vi"><b>chọn lọc dữ liệu</b></td><td>1</td></tr><tr data-k="dataset tập dữ liệu"><td lang="en">dataset</td><td lang="vi"><b>tập dữ liệu</b></td><td>5</td></tr><tr data-k="dropout dropout"><td lang="en">dropout</td><td lang="vi"><b>dropout</b></td><td>1</td></tr><tr data-k="encoder bộ mã hóa"><td lang="en">encoder</td><td lang="vi"><b>bộ mã hóa</b></td><td>2</td></tr><tr data-k="epoch epoch"><td lang="en">epoch</td><td lang="vi"><b>epoch</b></td><td>1</td></tr><tr data-k="exponential moving average trung bình trượt hàm mũ"><td lang="en">exponential moving average</td><td lang="vi"><b>trung bình trượt hàm mũ</b></td><td>1</td></tr><tr data-k="fine-tuning tinh chỉnh"><td lang="en">fine-tuning</td><td lang="vi"><b>tinh chỉnh</b></td><td>6</td></tr><tr data-k="gradient gradient"><td lang="en">gradient</td><td lang="vi"><b>gradient</b></td><td>3</td></tr><tr data-k="label noise nhiễu nhãn"><td lang="en">label noise</td><td lang="vi"><b>nhiễu nhãn</b></td><td>1</td></tr><tr data-k="language model mô hình ngôn ngữ"><td lang="en">language model</td><td lang="vi"><b>mô hình ngôn ngữ</b></td><td>3</td></tr><tr data-k="learning rate tốc độ học"><td lang="en">learning rate</td><td lang="vi"><b>tốc độ học</b></td><td>1</td></tr><tr data-k="noisy label nhãn nhiễu"><td lang="en">noisy label</td><td lang="vi"><b>nhãn nhiễu</b></td><td>1</td></tr><tr data-k="probability xác suất"><td lang="en">probability</td><td lang="vi"><b>xác suất</b></td><td>3</td></tr><tr data-k="random seed seed ngẫu nhiên"><td lang="en">random seed</td><td lang="vi"><b>seed ngẫu nhiên</b></td><td>2</td></tr><tr data-k="robustness khả năng chống chịu"><td lang="en">robustness</td><td lang="vi"><b>khả năng chống chịu</b></td><td>1</td></tr><tr data-k="sampler bộ lấy mẫu"><td lang="en">sampler</td><td lang="vi"><b>bộ lấy mẫu</b></td><td>2</td></tr><tr data-k="sampling lấy mẫu"><td lang="en">sampling</td><td lang="vi"><b>lấy mẫu</b></td><td>4</td></tr><tr data-k="standard deviation độ lệch chuẩn"><td lang="en">standard deviation</td><td lang="vi"><b>độ lệch chuẩn</b></td><td>3</td></tr><tr data-k="test set tập kiểm tra"><td lang="en">test set</td><td lang="vi"><b>tập kiểm tra</b></td><td>1</td></tr><tr data-k="text classification phân loại văn bản"><td lang="en">text classification</td><td lang="vi"><b>phân loại văn bản</b></td><td>2</td></tr><tr data-k="text generation sinh văn bản"><td lang="en">text generation</td><td lang="vi"><b>sinh văn bản</b></td><td>1</td></tr><tr data-k="trade-off đánh đổi"><td lang="en">trade-off</td><td lang="vi"><b>đánh đổi</b></td><td>1</td></tr><tr data-k="training set tập huấn luyện"><td lang="en">training set</td><td lang="vi"><b>tập huấn luyện</b></td><td>2</td></tr><tr data-k="transformer transformer"><td lang="en">transformer</td><td lang="vi"><b>Transformer</b></td><td>1</td></tr><tr data-k="uniform sampling lấy mẫu đều"><td lang="en">uniform sampling</td><td lang="vi"><b>lấy mẫu đều</b></td><td>2</td></tr><tr data-k="variance phương sai"><td lang="en">variance</td><td lang="vi"><b>phương sai</b></td><td>1</td></tr><tr data-k="classification phân loại"><td lang="en">classification</td><td lang="vi"><b>phân loại</b></td><td>1</td></tr><tr data-k="future work hướng nghiên cứu tiếp theo hướng phát triển"><td lang="en">future work</td><td lang="vi"><b>hướng nghiên cứu tiếp theo</b><br><small>hướng phát triển</small></td><td>1</td></tr><tr data-k="subset tập con"><td lang="en">subset</td><td lang="vi"><b>tập con</b></td><td>1</td></tr>
+    </tbody></table>
+  </div>
+</aside>
+
+<script>
+(function () {
+  var root = document.documentElement, body = document.body;
+  function load(k, d) { try { var v = localStorage.getItem("paperviet." + k); return v === null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem("paperviet." + k, v); } catch (e) {} }
+
+  function setMode(m) {
+    body.classList.remove("mode-bi", "mode-vi", "mode-en");
+    body.classList.add("mode-" + m);
+    document.querySelectorAll(".seg button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === m));
+    });
+    save("mode", m);
+  }
+  document.querySelectorAll(".seg button").forEach(function (b) {
+    b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); });
+  });
+  setMode(load("mode", "bi"));
+
+  var themes = ["auto", "light", "dark"];
+  function setTheme(t) {
+    if (t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+    document.getElementById("theme").title = { auto: "Theo hệ thống", light: "Sáng", dark: "Tối" }[t];
+    save("theme", t);
+  }
+  var theme = load("theme", "auto");
+  setTheme(theme);
+  document.getElementById("theme").addEventListener("click", function () {
+    theme = themes[(themes.indexOf(theme) + 1) % themes.length]; setTheme(theme);
+  });
+
+  var fs = parseFloat(load("fs", "0")) || 0;
+  function setFs(v) {
+    fs = Math.max(-3, Math.min(6, v));
+    if (fs) root.style.setProperty("--fs", "calc(" + (window.innerWidth <= 820 ? 16 : 17) + "px + " + fs + "px)");
+    else root.style.removeProperty("--fs");
+    save("fs", String(fs));
+  }
+  setFs(fs);
+  document.getElementById("fs-up").addEventListener("click", function () { setFs(fs + 1); });
+  document.getElementById("fs-down").addEventListener("click", function () { setFs(fs - 1); });
+
+  function closeAll() {
+    document.querySelectorAll(".drawer").forEach(function (d) { d.classList.remove("open"); });
+    body.classList.remove("drawer-open");
+  }
+  document.querySelectorAll("[data-open]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var d = document.getElementById(b.getAttribute("data-open"));
+      var wasOpen = d.classList.contains("open");
+      closeAll();
+      if (!wasOpen) { d.classList.add("open"); body.classList.add("drawer-open");
+        if (d.id === "gloss") document.getElementById("gloss-q").focus(); }
+    });
+  });
+  document.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", closeAll); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeAll(); });
+  document.querySelectorAll(".toc a").forEach(function (a) { a.addEventListener("click", closeAll); });
+
+  var q = document.getElementById("gloss-q");
+  q.addEventListener("input", function () {
+    var s = q.value.trim().toLowerCase();
+    document.querySelectorAll(".gloss tr[data-k]").forEach(function (tr) {
+      tr.style.display = !s || tr.getAttribute("data-k").indexOf(s) >= 0 ? "" : "none";
+    });
+  });
+
+  document.querySelector(".blocks").addEventListener("click", function (e) {
+    if (!body.classList.contains("mode-vi") || e.target.closest("a")) return;
+    var row = e.target.closest(".row");
+    if (row && !row.classList.contains("full") && !(window.getSelection && String(window.getSelection()))) row.classList.toggle("peek");
+  });
+})();
+</script>
+</body>
+</html>

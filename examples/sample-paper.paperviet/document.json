@@ -1,0 +1,347 @@
+{
+ "format": "paperviet/1",
+ "source": "sample-paper.pdf",
+ "title": "Sparse Curriculum Sampling for Efficient Fine-Tuning of Small Language Models",
+ "engine": "pymupdf",
+ "pages": 2,
+ "pages_extracted": [
+  1,
+  2
+ ],
+ "created": "2026-10-07T02:35:11Z",
+ "chunk_words": 400,
+ "blocks": [
+  {
+   "id": "b1",
+   "type": "title",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "",
+   "text": "Sparse Curriculum Sampling for Efficient Fine-Tuning of Small Language Models"
+  },
+  {
+   "id": "b2",
+   "type": "authors",
+   "page": 1,
+   "level": 0,
+   "keep": true,
+   "section": "",
+   "text": "An Tran and Laura Hayes\nDemo Institute of Computing (fictional affiliation)"
+  },
+  {
+   "id": "b3",
+   "type": "heading",
+   "page": 1,
+   "level": 1,
+   "keep": false,
+   "section": "",
+   "text": "Abstract"
+  },
+  {
+   "id": "b4",
+   "type": "abstract",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "Abstract",
+   "text": "Fine-tuning a pretrained language model on a new task usually requires many passes over the training set, even though a large fraction of the examples are already handled well after the first epoch. We propose Sparse Curriculum Sampling (SCS), a simple data selection method that estimates the difficulty of each example from its recent loss and samples hard examples more often while still revisiting easy ones. SCS adds no trainable parameters and can be implemented in a few lines of code. On three text classification benchmarks, SCS reaches the accuracy of standard fine-tuning while using 38% fewer gradient updates, and it reduces the variance across random seeds. We also discuss when the method fails and why its gains may not transfer to generation tasks."
+  },
+  {
+   "id": "b5",
+   "type": "heading",
+   "page": 1,
+   "level": 1,
+   "keep": false,
+   "section": "Abstract",
+   "text": "1 Introduction"
+  },
+  {
+   "id": "b6",
+   "type": "paragraph",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "1 Introduction",
+   "text": "Small language models with fewer than one billion parameters remain attractive for laboratories and companies with limited computing budgets. However, fine-tuning such a model still involves a trade-off between cost and accuracy: training for more epochs tends to improve the final score, but most of the additional computation is spent on examples that the model has already learned."
+  },
+  {
+   "id": "b7",
+   "type": "paragraph",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "1 Introduction",
+   "text": "Curriculum learning [2] addresses a related problem by presenting examples in a meaningful order, usually from easy to hard. In practice, a fixed curriculum requires a difficulty measure defined before training, which is often unavailable for new datasets. In this paper, we take a different view: instead of ordering the data once, we let the model's own training signal decide how often each example should be seen."
+  },
+  {
+   "id": "b8",
+   "type": "paragraph",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "1 Introduction",
+   "text": "Our contributions are threefold. First, we introduce SCS, a sampling rule based on an exponential moving average of the per-example loss. Second, we show empirically that SCS reduces the number of gradient updates without hurting accuracy. Third, we analyze the failure cases of the method, which, to the best of our knowledge, have not been reported for similar approaches."
+  },
+  {
+   "id": "b9",
+   "type": "heading",
+   "page": 1,
+   "level": 1,
+   "keep": false,
+   "section": "1 Introduction",
+   "text": "2 Method"
+  },
+  {
+   "id": "b10",
+   "type": "paragraph",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "2 Method",
+   "text": "Let D = {(x_i, y_i)}, i = 1..N, be the training set and f(x; w) a classifier with weights w. At step t, we keep a difficulty score s_i for every example, updated whenever the example is visited:"
+  },
+  {
+   "id": "b11",
+   "type": "equation",
+   "page": 1,
+   "level": 0,
+   "keep": true,
+   "section": "2 Method",
+   "text": "s_i <- beta * s_i + (1 - beta) * L(f(x_i; w), y_i)  (1)"
+  },
+  {
+   "id": "b12",
+   "type": "paragraph",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "2 Method",
+   "text": "where L is the cross-entropy loss and beta is a smoothing factor set to 0.9 in all experiments. Examples are then drawn with probability"
+  },
+  {
+   "id": "b13",
+   "type": "equation",
+   "page": 1,
+   "level": 0,
+   "keep": true,
+   "section": "2 Method",
+   "text": "p_i = (s_i + eps)^alpha / sum_j (s_j + eps)^alpha  (2)"
+  },
+  {
+   "id": "b14",
+   "type": "paragraph",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "2 Method",
+   "text": "The exponent alpha controls how strongly the sampler focuses on hard examples: alpha = 0 recovers uniform sampling, whereas large values concentrate the probability mass on a small subset. A small constant eps guarantees that every example keeps a non-zero probability of being selected, so that easy examples are revisited and the model does not forget them. We optimize the weights with Adam [4] and apply dropout [3] with rate 0.1, as in standard fine-tuning of Transformer encoders [1]."
+  },
+  {
+   "id": "b15",
+   "type": "footnote",
+   "page": 1,
+   "level": 0,
+   "keep": false,
+   "section": "2 Method",
+   "text": "* This is a fictional paper written for the PaperViet demo. The method and all numbers are invented; only the references are real."
+  },
+  {
+   "id": "b16",
+   "type": "heading",
+   "page": 2,
+   "level": 1,
+   "keep": false,
+   "section": "2 Method",
+   "text": "3 Experiments"
+  },
+  {
+   "id": "b17",
+   "type": "paragraph",
+   "page": 2,
+   "level": 0,
+   "keep": false,
+   "section": "3 Experiments",
+   "text": "We fine-tune a 110M-parameter encoder on three public text classification datasets, denoted A, B and C, with 12k, 45k and 120k training examples. Each configuration is repeated with five random seeds, and we report the mean accuracy on the test set together with the standard deviation. The baseline uses uniform sampling with the same learning rate of 2e-5 and a batch size of 32."
+  },
+  {
+   "id": "b18",
+   "type": "caption",
+   "page": 2,
+   "level": 0,
+   "keep": false,
+   "section": "3 Experiments",
+   "text": "Table 1: Test accuracy (%) and number of gradient updates (thousands) on the three datasets. Values are mean ± standard deviation over five seeds."
+  },
+  {
+   "id": "b19",
+   "type": "table",
+   "page": 2,
+   "level": 0,
+   "keep": true,
+   "section": "3 Experiments",
+   "text": "Method  Data A  Data B  Data C  Updates (k)\nUniform  86.1 ± 0.9  90.4 ± 0.5  93.2 ± 0.3  52.0\nSCS (alpha = 1)  86.3 ± 0.6  90.6 ± 0.4  93.1 ± 0.2  32.2\nSCS (alpha = 2)  85.2 ± 1.1  89.9 ± 0.7  92.8 ± 0.4  30.5"
+  },
+  {
+   "id": "b20",
+   "type": "paragraph",
+   "page": 2,
+   "level": 0,
+   "keep": false,
+   "section": "3 Experiments",
+   "text": "As shown in Table 1, SCS with alpha = 1 matches or slightly exceeds the baseline on two of the three datasets and stays within 0.1 points on the third, while requiring 38% fewer updates (32.2k versus 52.0k). The lower standard deviation suggests that focusing on informative examples also makes training more stable. With alpha = 2, however, accuracy drops on every dataset, which indicates that an overly aggressive sampler ignores easy examples for too long."
+  },
+  {
+   "id": "b21",
+   "type": "heading",
+   "page": 2,
+   "level": 1,
+   "keep": false,
+   "section": "3 Experiments",
+   "text": "4 Limitations"
+  },
+  {
+   "id": "b22",
+   "type": "paragraph",
+   "page": 2,
+   "level": 0,
+   "keep": false,
+   "section": "4 Limitations",
+   "text": "Our study has several limitations. All experiments use classification tasks and a single model size, so it is unclear whether the gains hold for text generation or for models with billions of parameters. In addition, noisy labels may receive persistently high losses; in such cases SCS could repeatedly sample mislabeled examples and amplify the noise."
+  },
+  {
+   "id": "b23",
+   "type": "heading",
+   "page": 2,
+   "level": 1,
+   "keep": false,
+   "section": "4 Limitations",
+   "text": "5 Conclusion"
+  },
+  {
+   "id": "b24",
+   "type": "paragraph",
+   "page": 2,
+   "level": 0,
+   "keep": false,
+   "section": "5 Conclusion",
+   "text": "We presented Sparse Curriculum Sampling, a lightweight method that reuses the training loss to decide which examples deserve more attention. The method reduces the cost of fine-tuning in our setting and is easy to combine with existing training pipelines. Future work will study adaptive values of alpha and robustness to label noise."
+  },
+  {
+   "id": "b25",
+   "type": "heading",
+   "page": 2,
+   "level": 1,
+   "keep": false,
+   "section": "5 Conclusion",
+   "text": "References"
+  },
+  {
+   "id": "b26",
+   "type": "reference",
+   "page": 2,
+   "level": 0,
+   "keep": true,
+   "section": "References",
+   "text": "[1] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems, 2017."
+  },
+  {
+   "id": "b27",
+   "type": "reference",
+   "page": 2,
+   "level": 0,
+   "keep": true,
+   "section": "References",
+   "text": "[2] Y. Bengio, J. Louradour, R. Collobert, and J. Weston. Curriculum learning. In Proceedings of the 26th International Conference on Machine Learning, 2009."
+  },
+  {
+   "id": "b28",
+   "type": "reference",
+   "page": 2,
+   "level": 0,
+   "keep": true,
+   "section": "References",
+   "text": "[3] N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhutdinov. Dropout: A simple way to prevent neural networks from overfitting. Journal of Machine Learning Research, 15:1929-1958, 2014."
+  },
+  {
+   "id": "b29",
+   "type": "reference",
+   "page": 2,
+   "level": 0,
+   "keep": true,
+   "section": "References",
+   "text": "[4] D. P. Kingma and J. Ba. Adam: A method for stochastic optimization. In International Conference on Learning Representations, 2015."
+  }
+ ],
+ "chunks": [
+  {
+   "id": "chunk-01",
+   "file": "chunks/chunk-01.en.md",
+   "translation": "translations/chunk-01.vi.md",
+   "blocks": [
+    "b1",
+    "b2",
+    "b3",
+    "b4",
+    "b5",
+    "b6",
+    "b7",
+    "b8"
+   ],
+   "words": 328,
+   "keep_only": false,
+   "heading": "Abstract"
+  },
+  {
+   "id": "chunk-02",
+   "file": "chunks/chunk-02.en.md",
+   "translation": "translations/chunk-02.vi.md",
+   "blocks": [
+    "b9",
+    "b10",
+    "b11",
+    "b12",
+    "b13",
+    "b14",
+    "b15",
+    "b16",
+    "b17",
+    "b18",
+    "b19",
+    "b20"
+   ],
+   "words": 337,
+   "keep_only": false,
+   "heading": "2 Method"
+  },
+  {
+   "id": "chunk-03",
+   "file": "chunks/chunk-03.en.md",
+   "translation": "translations/chunk-03.vi.md",
+   "blocks": [
+    "b21",
+    "b22",
+    "b23",
+    "b24",
+    "b25"
+   ],
+   "words": 113,
+   "keep_only": false,
+   "heading": "4 Limitations"
+  },
+  {
+   "id": "chunk-04",
+   "file": "chunks/chunk-04.en.md",
+   "translation": "translations/chunk-04.vi.md",
+   "blocks": [
+    "b26",
+    "b27",
+    "b28",
+    "b29"
+   ],
+   "words": 0,
+   "keep_only": true,
+   "heading": "References"
+  }
+ ]
+}

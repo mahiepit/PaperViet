@@ -1,0 +1,32 @@
+en,vi,domain,note
+fine-tuning,tinh chỉnh,ml,
+accuracy,độ chính xác,ml,
+dataset,tập dữ liệu,ml,
+sampling,lấy mẫu,stats,
+sampler,bộ lấy mẫu,stats,
+language model,mô hình ngôn ngữ,ml,
+gradient,gradient,ml,giữ nguyên
+probability,xác suất,stats,
+standard deviation,độ lệch chuẩn,stats,
+training set,tập huấn luyện,ml,
+text classification,phân loại văn bản,ml,
+random seed,seed ngẫu nhiên,ml,giữ "seed"
+uniform sampling,lấy mẫu đều,stats,
+encoder,bộ mã hóa,ml,
+epoch,epoch,ml,giữ nguyên
+data selection,chọn lọc dữ liệu,ml,
+variance,phương sai,stats,
+trade-off,đánh đổi,general,
+curriculum learning,học theo giáo trình,ml,kèm tiếng Anh ở lần đầu
+exponential moving average,trung bình trượt hàm mũ,stats,EMA
+classifier,bộ phân loại,ml,
+cross-entropy loss,hàm mất mát entropy chéo,ml,
+dropout,dropout,ml,giữ nguyên
+transformer,Transformer,ml,tên kiến trúc
+test set,tập kiểm tra,ml,
+learning rate,tốc độ học,ml,
+batch size,kích thước lô,ml,
+text generation,sinh văn bản,ml,
+noisy label,nhãn nhiễu,ml,
+label noise,nhiễu nhãn,ml,
+robustness,khả năng chống chịu,ml,trong bài này: chống chịu nhiễu nhãn

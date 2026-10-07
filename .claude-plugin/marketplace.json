@@ -1,0 +1,17 @@
+{
+  "name": "paperviet",
+  "description": "PaperViet: read English academic papers in Vietnamese (agent skill).",
+  "owner": {
+    "name": "Thảo Gia",
+    "url": "https://github.com/mahiepit"
+  },
+  "plugins": [
+    {
+      "name": "paper-viet",
+      "source": "./",
+      "description": "Read English academic papers (PDF) in Vietnamese: bilingual HTML reader, quick-read summaries, glossary and terminology checks.",
+      "category": "productivity",
+      "tags": ["vietnamese", "translation", "academic-papers", "pdf", "research"]
+    }
+  ]
+}
