@@ -10,6 +10,8 @@
 
 ![PaperViet: English | Vietnamese bilingual reader](docs/img/screenshot-bilingual.png)
 
+**[▶ Live demo](https://mahiepit.github.io/PaperViet/examples/sample-paper.vi.html)**
+
 <sub>The paper in the screenshot is a fictional paper written for the demo (see <a href="examples/">examples/</a>).</sub>
 
 </div>

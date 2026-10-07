@@ -10,6 +10,8 @@ Tiếng Việt · [English](README.en.md)
 
 ![PaperViet: bản đọc song ngữ Anh – Việt](docs/img/screenshot-bilingual.png)
 
+**[▶ Xem bản demo trực tuyến](https://mahiepit.github.io/PaperViet/examples/sample-paper.vi.html)**
+
 <sub>Bài báo trong ảnh là bài báo hư cấu viết riêng cho bản demo (xem <a href="examples/">examples/</a>).</sub>
 
 </div>
