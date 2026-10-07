@@ -1,6 +1,6 @@
 ---
 name: paper-viet
-description: Read English academic papers (PDF) in Vietnamese. Translates papers section by section into natural academic Vietnamese with a consistent EN-VI terminology glossary, keeps equations, citations and numbers intact, and builds a side-by-side bilingual HTML reader plus Markdown. Also writes Vietnamese quick-read summaries, explains hard passages and extracts glossaries. Use when the user wants to translate, summarize, explain or read a research paper, article or PDF in Vietnamese, e.g. "dịch bài báo này sang tiếng Việt", "đọc nhanh paper.pdf", "tóm tắt bài báo", "giải thích đoạn này", "thuật ngữ trong bài".
+description: Read English academic papers (PDF) in Vietnamese. Translates section by section into natural academic Vietnamese with a consistent EN-VI glossary, keeps equations, citations and numbers intact, builds a bilingual HTML reader; also quick-read summaries, passage explanations, glossaries. Use when the user wants to translate, summarize or explain a research paper in Vietnamese, e.g. "dịch bài báo này", "đọc nhanh paper.pdf", "tóm tắt bài báo".
 license: MIT
 compatibility: Helper scripts need Python 3.9+; PDF extraction needs PyMuPDF or pypdf (pip install pymupdf). Without them the agent can read the PDF natively and continue from a text file.
 metadata:
@@ -15,6 +15,7 @@ You (the agent) do the translation. The scripts only extract, organise, check an
 All user-facing text you write (translations, summaries, explanations, final messages) is in
 Vietnamese unless the user asks otherwise.
 
+<!-- skilllint-disable agent-specific-syntax -->
 **Paths.** `${CLAUDE_SKILL_DIR}` below means the folder that contains this SKILL.md. If your
 agent does not substitute it, replace it with the real path. Use `python3` on macOS/Linux and
 `python` (or `py`) on Windows.
